@@ -17,7 +17,7 @@
 
   <script>
     // ✅ Set up Mapbox
-    mapboxgl.accessToken = "pk.eyJ1IjoiZ2VvdG9rIiwiYSI6ImNtN2l1eWVsNTAwaGgybHM3eTY4OGw2bDgifQ.GZG8mzlLmHE3vRcn7hd3Qg";  // Replace with your actual Mapbox API Key
+    mapboxgl.accessToken = "YOUR_MAPBOX_API_KEY";  // Replace with your actual Mapbox API Key
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
@@ -25,47 +25,34 @@
       zoom: 12
     });
 
-    // ✅ Airtable Configuration
-    const AIRTABLE_API_KEY = "patBUv9Dje1C0Kmp8.2e6ac34fbe61e5b4e24a781ab8d2c0b868fd683d1be77f38ad98d3ba4faf9a4f";
-    const BASE_ID = "appsyaPTDflsszpmB";
-    const TABLE_ID = "tbl9vS8Iu1SeSh32G"; // Correct table ID from Airtable
+    // ✅ Fetch data securely from Netlify function
+    fetch('/.netlify/functions/fetchAirtable')
+      .then(response => response.json())
+      .then(data => {
+        console.log("Airtable Data:", data);
 
-    // ✅ Fetch Data from Airtable
-    axios.get(`https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`, {
-      headers: { 'Authorization': `Bearer ${AIRTABLE_API_KEY}` }
-    })
-    .then(response => {
-      console.log("Airtable response:", response.data); // Debugging log
+        const records = data.records || [];
+        records.forEach(record => {
+          if (record.fields.Locations) {
+            const locations = record.fields.Locations.split(' | ');
 
-      const records = response.data.records;
-      if (!records.length) {
-        console.error("No records found.");
-        return;
-      }
+            locations.forEach(location => {
+              const [name, url] = location.split(', ');
+              let coords;
 
-      records.forEach(record => {
-        if (record.fields.Locations) {
-          const locations = record.fields.Locations.split(' | ');
+              if (name.includes("Joe’s Pizza")) coords = [-74.0029, 40.7317];
+              else if (name.includes("Sally’s Burgers")) coords = [-73.9614, 40.7658];
+              else coords = [-74.0060, 40.7128];
 
-          locations.forEach(location => {
-            const [name, url] = location.split(', ');
-            let coords;
-
-            if (name.includes("Joe’s Pizza")) coords = [-74.0029, 40.7317];
-            else if (name.includes("Sally’s Burgers")) coords = [-73.9614, 40.7658];
-            else coords = [-74.0060, 40.7128]; // Default
-
-            new mapboxgl.Marker()
-              .setLngLat(coords)
-              .setPopup(new mapboxgl.Popup().setHTML(`<h3>${name}</h3><p><a href="${url}" target="_blank">More Info</a></p>`))
-              .addTo(map);
-          });
-        }
-      });
-    })
-    .catch(error => {
-      console.error("Error fetching Airtable data:", error.response ? error.response.data : error);
-    });
+              new mapboxgl.Marker()
+                .setLngLat(coords)
+                .setPopup(new mapboxgl.Popup().setHTML(`<h3>${name}</h3><p><a href="${url}" target="_blank">More Info</a></p>`))
+                .addTo(map);
+            });
+          }
+        });
+      })
+      .catch(error => console.error("Error fetching data:", error));
   </script>
 
 </body>
