@@ -5,6 +5,7 @@
   <title>Food Maps - Map 001</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script> <!-- For Airtable API -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <style>
     body { margin: 0; padding: 0; }
@@ -18,21 +19,50 @@
     const map = new mapboxgl.Map({
       container: 'map', // ID of the div
       style: 'mapbox://styles/mapbox/streets-v12', // Map style
-      center: [-74.0060, 40.7128], // Center on NYC
+      center: [-74.0060, 40.7128], // Center on NYC (example)
       zoom: 12 // Zoom level
     });
 
-    // Add test markers with hardcoded coordinates
-    const markers = [
-      { name: "Joe’s Pizza", coords: [-74.0029, 40.7317] }, // Joe’s Pizza (Greenwich Village)
-      { name: "Sally’s Burgers", coords: [-73.9614, 40.7658] } // Hypothetical burger spot (Upper East Side)
-    ];
+    // Airtable configuration
+    const AIRTABLE_API_KEY = 'patC4T8nrsZMyFMQw.6576eb1e44b2c8d9ca94a4d7ef9bc4ade84149f35433e4cbf6b2ec36c050137a';
+    const BASE_ID = 'appsyaPTDflsszpmB';
+    const TABLE_NAME = 'Maps';
 
-    markers.forEach(marker => {
-      new mapboxgl.Marker()
-        .setLngLat(marker.coords)
-        .setPopup(new mapboxgl.Popup().setHTML(`<h3>${marker.name}</h3>`))
-        .addTo(map);
+    // Fetch data for map-001 from Airtable
+    axios.get(`https://api.airtable.com/v0/${BASE_ID}/${TABLE_NAME}?filterByFormula=({Map%20ID}='map-001')`, {
+      headers: { 'Authorization': `Bearer ${AIRTABLE_API_KEY}` }
+    })
+    .then(response => {
+      const record = response.data.records[0]; // Get the first (and only) record for map-001
+      if (record) {
+        const locations = record.fields.Locations.split(' | '); // Split locations by " | "
+        const markers = locations.map(location => {
+          const [name, url] = location.split(', '); // Split name and URL/address
+          // Hardcode coordinates based on your locations (update these for your actual spots)
+          let coords;
+          if (name.includes("Joe’s Pizza")) {
+            coords = [-74.0029, 40.7317]; // Joe’s Pizza (Greenwich Village)
+          } else if (name.includes("Sally’s Burgers")) {
+            coords = [-73.9614, 40.7658]; // Hypothetical burger spot (Upper East Side)
+          } else {
+            coords = [-74.0060, 40.7128]; // Default to NYC center if unknown
+          }
+          return { name, coords };
+        });
+
+        // Add markers to the map
+        markers.forEach(marker => {
+          new mapboxgl.Marker()
+            .setLngLat(marker.coords)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>${marker.name}</h3>`))
+            .addTo(map);
+        });
+      } else {
+        console.error('No record found for map-001');
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching Airtable data:', error);
     });
   </script>
 </body>
