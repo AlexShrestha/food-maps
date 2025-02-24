@@ -5,9 +5,7 @@
   <title>Food Maps - Map 001</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.1/mapbox-gl-geocoder.min.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.1/mapbox-gl-geocoder.css" type="text/css">
   <style>
     body { margin: 0; padding: 0; }
     #map { height: 100vh; width: 100%; }
@@ -24,25 +22,17 @@
       zoom: 12 // Zoom level
     });
 
-    // Add test markers
+    // Add test markers with hardcoded coordinates
     const markers = [
-      { name: "Joe’s Pizza", location: "7 Carmine St, New York, NY 10014" }, // Joe’s Pizza in Greenwich Village
-      { name: "Sally’s Burgers", location: "1133 1st Ave, New York, NY 10065" } // Hypothetical burger spot (using Shake Shack’s location)
+      { name: "Joe’s Pizza", coords: [-74.0029, 40.7317] }, // Joe’s Pizza (Greenwich Village)
+      { name: "Sally’s Burgers", coords: [-73.9614, 40.7658] } // Hypothetical burger spot (Upper East Side)
     ];
 
     markers.forEach(marker => {
-      const geocoder = new mapboxgl.Geocoder({
-        accessToken: mapboxgl.accessToken,
-        map: map
-      });
-      geocoder.query(marker.location, (error, result) => {
-        if (error) return console.error(error);
-        const coords = result.geometry.coordinates;
-        new mapboxgl.Marker()
-          .setLngLat(coords)
-          .setPopup(new mapboxgl.Popup().setHTML(`<h3>${marker.name}</h3>`))
-          .addTo(map);
-      });
+      new mapboxgl.Marker()
+        .setLngLat(marker.coords)
+        .setPopup(new mapboxgl.Popup().setHTML(`<h3>${marker.name}</h3>`))
+        .addTo(map);
     });
   </script>
 </body>
