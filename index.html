@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <title>Food Maps - Map 001</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
@@ -16,12 +17,19 @@
   <script>
     fetch('/.netlify/functions/fetchAirtable')
       .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
       })
       .then(data => {
         console.log("Response Data:", data);
-        if (!data.mapboxKey) throw new Error('Mapbox API key missing');
+        if (!data.mapboxKey) {
+          throw new Error('Mapbox API key missing from response');
+        }
+        if (!data.airtableData || !data.airtableData.records) {
+          throw new Error('Airtable data missing from response');
+        }
 
         mapboxgl.accessToken = data.mapboxKey;
         const map = new mapboxgl.Map({
@@ -40,7 +48,7 @@
               let coords;
               if (name.includes("Joe’s Pizza")) coords = [-74.0029, 40.7317];
               else if (name.includes("Sally’s Burgers")) coords = [-73.9614, 40.7658];
-              else coords = [-74.0060, 40.7128];
+              else coords = [-74.0060, 40.7128]; // Default coordinates
 
               new mapboxgl.Marker()
                 .setLngLat(coords)
@@ -50,7 +58,11 @@
           }
         });
       })
-      .catch(error => console.error("Error fetching data:", error));
+      .catch(error => {
+        console.error("Error fetching data:", error);
+        // Display error message on the page
+        document.getElementById('map').innerHTML = `<p style="color: red; text-align: center;">Error: ${error.message}</p>`;
+      });
   </script>
 </body>
 </html>
