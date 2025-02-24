@@ -5,7 +5,9 @@
   <title>Food Maps - Map 001</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.1/mapbox-gl-geocoder.min.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.1/mapbox-gl-geocoder.css" type="text/css">
   <style>
     body { margin: 0; padding: 0; }
     #map { height: 100vh; width: 100%; }
@@ -23,10 +25,10 @@
     });
 
     // Add test markers
-   const markers = [
-  { name: "Joe’s Pizza", location: "7 Carmine St, New York, NY 10014" }, // Joe’s Pizza in Greenwich Village
-  { name: "Sally’s Burgers", location: "1133 1st Ave, New York, NY 10065" } // Hypothetical burger spot (using Shake Shack’s location)
-];
+    const markers = [
+      { name: "Joe’s Pizza", location: "7 Carmine St, New York, NY 10014" }, // Joe’s Pizza in Greenwich Village
+      { name: "Sally’s Burgers", location: "1133 1st Ave, New York, NY 10065" } // Hypothetical burger spot (using Shake Shack’s location)
+    ];
 
     markers.forEach(marker => {
       const geocoder = new mapboxgl.Geocoder({
