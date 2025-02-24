@@ -23,10 +23,10 @@
     });
 
     // Add test markers
-    const markers = [
-      { name: "Joe’s Pizza", location: "123 Main St, New York, NY" },
-      { name: "Sally’s Burgers", location: "456 Elm St, New York, NY" }
-    ];
+   const markers = [
+  { name: "Joe’s Pizza", location: "7 Carmine St, New York, NY 10014" }, // Joe’s Pizza in Greenwich Village
+  { name: "Sally’s Burgers", location: "1133 1st Ave, New York, NY 10065" } // Hypothetical burger spot (using Shake Shack’s location)
+];
 
     markers.forEach(marker => {
       const geocoder = new mapboxgl.Geocoder({
