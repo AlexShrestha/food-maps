@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Food Maps - Map 001</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { height: 100vh; width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZ2VvdG9rIiwiYSI6ImNtN2l1eWVsNTAwaGgybHM3eTY4OGw2bDgifQ.GZG8mzlLmHE3vRcn7hd3Qg';
+    const map = new mapboxgl.Map({
+      container: 'map', // ID of the div
+      style: 'mapbox://styles/mapbox/streets-v12', // Map style
+      center: [-74.0060, 40.7128], // Center on NYC (example)
+      zoom: 12 // Zoom level
+    });
+
+    // Add test markers (replace with your locations later)
+    const markers = [
+      { name: "Joe’s Pizza", location: "123 Main St, New York, NY" },
+      { name: "Sally’s Burgers", location: "456 Elm St, New York, NY" }
+    ];
+
+    markers.forEach(marker => {
+      const geocoder = new mapboxgl.Geocoder({
+        accessToken: mapboxgl.accessToken,
+        map: map
+      });
+      geocoder.query(marker.location, (error, result) => {
+        if (error) return console.error(error);
+        const coords = result.geometry.coordinates;
+        new mapboxgl.Marker()
+          .setLngLat(coords)
+          .setPopup(new mapboxgl.Popup().setHTML(`<h3>${marker.name}</h3>`))
+          .addTo(map);
+      });
+    });
+  </script>
+</body>
+</html>
