@@ -8,8 +8,7 @@ exports.handler = async (event) => {
     const MAPBOX_API_KEY = process.env.MAPBOX_API_KEY;
 
     if (!AIRTABLE_API_KEY || !BASE_ID || !TABLE_ID || !MAPBOX_API_KEY) {
-      console.error("Missing environment variables");
-      return { statusCode: 500, body: JSON.stringify({ error: "Missing API keys in Netlify environment variables" }) };
+      return { statusCode: 500, body: JSON.stringify({ error: "Missing API keys" }) };
     }
 
     const mapID = event.queryStringParameters.mapID;
@@ -18,8 +17,7 @@ exports.handler = async (event) => {
     }
 
     const url = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}?filterByFormula={Map%20ID}='${mapID}'`;
-    console.log("Fetching Airtable data from:", url);
-    
+
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
     });
@@ -31,12 +29,18 @@ exports.handler = async (event) => {
     const record = response.data.records[0];
     const videoLink = record.fields["Video Link"] || "";
 
-    // ✅ Extract all locations from a single field (newline-separated format)
+    // ✅ Extract all locations
     const locationsRaw = record.fields["Locations"] ? record.fields["Locations"].split("\n") : [];
-    const locations = locationsRaw.map(link => ({
-      url: link.trim(),
-      name: link.trim() // Placeholder, can extract names later
-    }));
+    
+    // ✅ Extract lat/lng from long Google Maps URLs
+    const locations = locationsRaw.map((link) => {
+      const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      return match ? {
+        name: link.split('/place/')[1]?.split('/@')[0] || "Unknown",
+        url: link,
+        coords: [parseFloat(match[2]), parseFloat(match[1])]
+      } : null;
+    }).filter(Boolean);
 
     return {
       statusCode: 200,
@@ -49,7 +53,6 @@ exports.handler = async (event) => {
       })
     };
   } catch (error) {
-    console.error("Airtable Fetch Error:", error.response ? error.response.data : error);
     return {
       statusCode: error.response ? error.response.status : 500,
       body: JSON.stringify({ error: error.message })
