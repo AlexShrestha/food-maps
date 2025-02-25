@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <title>Food Maps - Map 001</title>
-  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <style>
@@ -14,28 +13,25 @@
 </head>
 <body>
   <div id="map"></div>
+
   <script>
+    // ✅ Fetch data securely from Netlify function
     fetch('/.netlify/functions/fetchAirtable')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
+      .then(response => response.json())
       .then(data => {
-        console.log("Response Data:", data);
-        if (!data.mapboxKey) {
-          throw new Error('Mapbox API key missing from response');
-        }
-        if (!data.airtableData || !data.airtableData.records) {
-          throw new Error('Airtable data missing from response');
+        if (!data.mapboxKey || !data.airtableData) {
+          console.error("Error: Missing API keys or Airtable data", data);
+          return;
         }
 
+        // ✅ Load Mapbox API key from Netlify response
         mapboxgl.accessToken = data.mapboxKey;
+
+        // ✅ Initialize Map
         const map = new mapboxgl.Map({
           container: 'map',
           style: 'mapbox://styles/mapbox/streets-v12',
-          center: [-74.0060, 40.7128],
+          center: [-74.0060, 40.7128], // Default to New York
           zoom: 12
         });
 
@@ -46,9 +42,10 @@
             locations.forEach(location => {
               const [name, url] = location.split(', ');
               let coords;
+
               if (name.includes("Joe’s Pizza")) coords = [-74.0029, 40.7317];
               else if (name.includes("Sally’s Burgers")) coords = [-73.9614, 40.7658];
-              else coords = [-74.0060, 40.7128]; // Default coordinates
+              else coords = [-74.0060, 40.7128];
 
               new mapboxgl.Marker()
                 .setLngLat(coords)
@@ -58,11 +55,8 @@
           }
         });
       })
-      .catch(error => {
-        console.error("Error fetching data:", error);
-        // Display error message on the page
-        document.getElementById('map').innerHTML = `<p style="color: red; text-align: center;">Error: ${error.message}</p>`;
-      });
+      .catch(error => console.error("Error fetching data:", error));
   </script>
+
 </body>
 </html>

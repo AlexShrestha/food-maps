@@ -5,16 +5,16 @@ exports.handler = async () => {
     const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
     const BASE_ID = process.env.BASE_ID;
     const TABLE_ID = process.env.TABLE_ID;
-    const MAPBOX_API_KEY = process.env.MAPBOX_API_KEY; // Load Mapbox key
+    const MAPBOX_API_KEY = process.env.MAPBOX_API_KEY;
 
     if (!AIRTABLE_API_KEY || !BASE_ID || !TABLE_ID || !MAPBOX_API_KEY) {
-      throw new Error(
-        "Missing API keys or IDs in Netlify environment variables. " +
-        "Please set AIRTABLE_API_KEY, BASE_ID, TABLE_ID, and MAPBOX_API_KEY in your Netlify environment variables."
-      );
+      throw new Error("Missing API keys in Netlify environment variables");
     }
 
-    const url = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}?filterByFormula=(Map%3D2)`;
+    const url = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
+    
+    console.log("Fetching from Airtable:", url);
+
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
     });
@@ -27,10 +27,10 @@ exports.handler = async () => {
       })
     };
   } catch (error) {
-    console.error("Error in Netlify function:", error.message); // Log error for debugging
+    console.error("Airtable Fetch Error:", error.response ? error.response.data : error);
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      statusCode: error.response ? error.response.status : 500,
+      body: JSON.stringify({ error: error.message, details: error.response ? error.response.data : {} })
     };
   }
 };
