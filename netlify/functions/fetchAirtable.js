@@ -1,4 +1,3 @@
-// netlify/functions/fetchAirtable.js
 const axios = require("axios");
 
 exports.handler = async (event) => {
@@ -31,11 +30,13 @@ exports.handler = async (event) => {
 
     const record = response.data.records[0];
     const videoLink = record.fields["Video Link"] || "";
-    const locationsRaw = record.fields["Locations"] ? record.fields["Locations"].split("\n") : [];
 
-    const locations = locationsRaw.map(link => {
-      return { name: link, url: link }; // Simplified for now
-    });
+    // ✅ Extract all locations from a single field (newline-separated format)
+    const locationsRaw = record.fields["Locations"] ? record.fields["Locations"].split("\n") : [];
+    const locations = locationsRaw.map(link => ({
+      url: link.trim(),
+      name: link.trim() // Placeholder, can extract names later
+    }));
 
     return {
       statusCode: 200,
