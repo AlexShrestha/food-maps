@@ -2,61 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Food Maps - Map 001</title>
+  <title>Food Maps</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 0; }
-    #map { height: 100vh; width: 100%; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; text-align: center; background: #f8f8f8; }
+    #map { height: 60vh; width: 100%; border-radius: 10px; margin-bottom: 20px; }
+    .container { padding: 20px; max-width: 800px; margin: auto; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
+    .btn { display: inline-block; padding: 12px 20px; background: #007BFF; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; }
+    iframe { width: 100%; height: 533px; border: 1px solid #ccc; border-radius: 5px; }
   </style>
 </head>
 <body>
-  <div id="map"></div>
+  <div class="container">
+    <h1>Food Map for <span id="map-title"></span></h1>
+    <div id="map"></div>
+    <p><a id="video-link" href="#" target="_blank">Watch Original TikTok Video</a></p>
+    <h3>Want More Food Maps?</h3>
+    <iframe class="airtable-embed" src="https://airtable.com/embed/appcRsxMxG1TVsKrz/pagYjsJcfs434HcA6/form" frameborder="0"></iframe>
+  </div>
 
   <script>
-    // ✅ Fetch data securely from Netlify function
-    fetch('/.netlify/functions/fetchAirtable')
-      .then(response => response.json())
-      .then(data => {
-        if (!data.mapboxKey || !data.airtableData) {
-          console.error("Error: Missing API keys or Airtable data", data);
-          return;
-        }
+    const urlParams = new URLSearchParams(window.location.search);
+    const mapID = urlParams.get("mapID");
 
-        // ✅ Load Mapbox API key from Netlify response
-        mapboxgl.accessToken = data.mapboxKey;
-
-        // ✅ Initialize Map
-        const map = new mapboxgl.Map({
-          container: 'map',
-          style: 'mapbox://styles/mapbox/streets-v12',
-          center: [-74.0060, 40.7128], // Default to New York
-          zoom: 12
-        });
-
-        const records = data.airtableData.records || [];
-        records.forEach(record => {
-          if (record.fields.Locations) {
-            const locations = record.fields.Locations.split(' | ');
-            locations.forEach(location => {
-              const [name, url] = location.split(', ');
-              let coords;
-
-              if (name.includes("Joe’s Pizza")) coords = [-74.0029, 40.7317];
-              else if (name.includes("Sally’s Burgers")) coords = [-73.9614, 40.7658];
-              else coords = [-74.0060, 40.7128];
-
-              new mapboxgl.Marker()
-                .setLngLat(coords)
-                .setPopup(new mapboxgl.Popup().setHTML(`<h3>${name}</h3><p><a href="${url}" target="_blank">More Info</a></p>`))
-                .addTo(map);
-            });
+    if (!mapID) {
+      document.body.innerHTML = "<h1>Error: No Map ID Provided</h1>";
+    } else {
+      fetch(`/.netlify/functions/fetchAirtable?mapID=${mapID}`)
+        .then(response => response.json())
+        .then(data => {
+          if (!data.airtableData) {
+            document.body.innerHTML = "<h1>Map Not Found</h1>";
+            return;
           }
-        });
-      })
-      .catch(error => console.error("Error fetching data:", error));
-  </script>
 
+          document.getElementById("map-title").innerText = mapID;
+          document.getElementById("video-link").href = data.videoLink;
+
+          mapboxgl.accessToken = data.mapboxKey;
+          const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-74.0060, 40.7128],
+            zoom: 12
+          });
+
+          data.locations.forEach(place => {
+            new mapboxgl.Marker()
+              .setLngLat([-74.0060, 40.7128]) // Placeholder for actual coordinates
+              .setPopup(new mapboxgl.Popup().setHTML(`<h3>${place.name}</h3><p><a href="${place.url}" target="_blank">Google Maps</a></p>`))
+              .addTo(map);
+          });
+        })
+        .catch(error => console.error("Error fetching map data:", error));
+    }
+  </script>
 </body>
 </html>

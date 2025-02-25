@@ -1,6 +1,3 @@
 [build]
-  functions = "netlify/functions"
-  publish = "."
-
-[dev]
-  command = "npm start"
+functions = "netlify/functions"
+publish = "."
