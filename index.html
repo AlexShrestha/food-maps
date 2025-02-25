@@ -1,63 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Food Maps</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Map</title>
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; text-align: center; background: #f8f8f8; }
-    #map { height: 60vh; width: 100%; border-radius: 10px; margin-bottom: 20px; }
-    .container { padding: 20px; max-width: 800px; margin: auto; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-    .btn { display: inline-block; padding: 12px 20px; background: #007BFF; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; }
-    iframe { width: 100%; height: 533px; border: 1px solid #ccc; border-radius: 5px; }
+    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+    #map { width: 100%; height: 500px; margin: 20px auto; }
+    .container { width: 90%; max-width: 800px; margin: auto; }
+    .link { display: block; margin: 15px 0; font-size: 16px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Food Map for <span id="map-title"></span></h1>
+    <h1 id="map-title">Food Map for </h1>
     <div id="map"></div>
-    <p><a id="video-link" href="#" target="_blank">Watch Original TikTok Video</a></p>
+    <a id="video-link" class="link" href="#" target="_blank">Watch Original TikTok Video</a>
     <h3>Want More Food Maps?</h3>
-    <iframe class="airtable-embed" src="https://airtable.com/embed/appcRsxMxG1TVsKrz/pagYjsJcfs434HcA6/form" frameborder="0"></iframe>
+    <iframe class="airtable-embed" src="https://airtable.com/embed/appcRsxMxG1TVsKrz/pagYjsJcfs434HcA6/form" 
+      frameborder="0" width="100%" height="533" style="background: transparent; border: 1px solid #ccc;"></iframe>
   </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const mapID = urlParams.get("mapID");
+    async function fetchMapData(mapID) {
+      try {
+        const response = await fetch(`/.netlify/functions/fetchAirtable?mapID=${mapID}`);
+        const data = await response.json();
 
-    if (!mapID) {
-      document.body.innerHTML = "<h1>Error: No Map ID Provided</h1>";
-    } else {
-      fetch(`/.netlify/functions/fetchAirtable?mapID=${mapID}`)
-        .then(response => response.json())
-        .then(data => {
-          if (!data.airtableData) {
-            document.body.innerHTML = "<h1>Map Not Found</h1>";
-            return;
-          }
+        if (!data.airtableData || !data.locations.length) {
+          document.body.innerHTML = "<h1>Map Not Found</h1>";
+          return;
+        }
 
-          document.getElementById("map-title").innerText = mapID;
-          document.getElementById("video-link").href = data.videoLink;
+        document.getElementById("video-link").href = data.videoLink;
+        document.getElementById("map-title").innerText += mapID;
 
-          mapboxgl.accessToken = data.mapboxKey;
-          const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-74.0060, 40.7128],
-            zoom: 12
-          });
+        mapboxgl.accessToken = data.mapboxKey;
+        const map = new mapboxgl.Map({
+          container: 'map',
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [-74.0060, 40.7128], // Default to NYC
+          zoom: 12
+        });
 
-          data.locations.forEach(place => {
+        for (const place of data.locations) {
+          try {
+            const fullURL = await resolveShortURL(place.url);
+            const coords = extractLatLng(fullURL);
+            if (!coords) continue;
+
             new mapboxgl.Marker()
-              .setLngLat([-74.0060, 40.7128]) // Placeholder for actual coordinates
-              .setPopup(new mapboxgl.Popup().setHTML(`<h3>${place.name}</h3><p><a href="${place.url}" target="_blank">Google Maps</a></p>`))
+              .setLngLat(coords)
+              .setPopup(new mapboxgl.Popup().setHTML(`<h3>${place.name}</h3><p><a href="${place.url}" target="_blank">View on Google Maps</a></p>`))
               .addTo(map);
-          });
-        })
-        .catch(error => console.error("Error fetching map data:", error));
+          } catch (error) {
+            console.error("Error processing location:", place.url);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching map data:", error);
+        document.body.innerHTML = "<h1>Failed to Load Map Data</h1>";
+      }
     }
+
+    // ✅ Resolve Google Short URL → Full Google Maps URL
+    async function resolveShortURL(shortURL) {
+      const response = await fetch(shortURL, { method: "HEAD", redirect: "follow" });
+      return response.url;
+    }
+
+    // ✅ Extract lat/lng from a full Google Maps URL
+    function extractLatLng(url) {
+      const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      return match ? [parseFloat(match[2]), parseFloat(match[1])] : null;
+    }
+
+    // Run function
+    const urlParams = new URLSearchParams(window.location.search);
+    fetchMapData(urlParams.get("mapID"));
   </script>
 </body>
 </html>
