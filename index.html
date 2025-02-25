@@ -58,7 +58,7 @@
         <h1 id="map-title">Food Map for <span id="video-name">...</span></h1>
         <div id="map"></div>
         <a id="video-link" class="link" href="#" target="_blank">Watch Original TikTok Video</a>
-        <h3>Signup to add it to your map</h3>
+        <h3>Want More Food Maps?</h3>
         <iframe class="airtable-embed" src="https://airtable.com/embed/appcRsxMxG1TVsKrz/pagYjsJcfs434HcA6/form" 
             frameborder="0" width="100%" height="533" style="background: transparent; border: 1px solid #ccc; border-radius: 10px;"></iframe>
     </div>
@@ -76,8 +76,8 @@
 
                 document.getElementById("video-link").href = data.videoLink;
 
-                // Extract video title (fallback to mapID)
-                const videoTitle = await fetchVideoTitle(data.videoLink);
+                // Use Airtable "Video Title" field if available
+                const videoTitle = data.videoTitle || mapID;
                 document.getElementById("video-name").innerHTML = `<a href="${data.videoLink}" target="_blank">${videoTitle}</a>`;
 
                 mapboxgl.accessToken = data.mapboxKey;
@@ -99,17 +99,6 @@
             } catch (error) {
                 console.error("Error fetching map data:", error);
                 document.body.innerHTML = "<h1>Failed to Load Map Data</h1>";
-            }
-        }
-
-        async function fetchVideoTitle(url) {
-            try {
-                const response = await fetch(`https://noembed.com/embed?url=${url}`);
-                const data = await response.json();
-                return data.title || "Unknown TikTok Video";
-            } catch (error) {
-                console.error("Error fetching video title:", error);
-                return "Unknown TikTok Video";
             }
         }
 
