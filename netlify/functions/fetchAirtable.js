@@ -36,16 +36,14 @@ exports.handler = async (event) => {
     // ✅ Extract lat/lng and restaurant names from Google Maps URLs
     const locations = locationsRaw.map((link) => {
       const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-      let name = "Unknown Place";
+      let name = "Unknown";
 
-      // Extract name from URL if "/place/" exists
-      const nameMatch = link.match(/\/place\/([^/]+)/);
-      if (nameMatch) {
-        name = decodeURIComponent(nameMatch[1]).replace(/\+/g, " ");  // ✅ Convert %20 and + to spaces
+      if (link.includes("/place/")) {
+        name = decodeURIComponent(link.split("/place/")[1]?.split("/@")[0] || "Unknown");
       }
 
       return match ? {
-        name: name,
+        name: name.replace(/\+/g, " "),  // ✅ Converts "+" to spaces for readability
         url: link,
         coords: [parseFloat(match[2]), parseFloat(match[1])]
       } : null;
