@@ -28,15 +28,22 @@ exports.handler = async (event) => {
 
     const record = response.data.records[0];
     const videoLink = record.fields["Video Link"] || "";
+    const videoTitle = record.fields["Video Title"] || "TikTok Video";  // ✅ Fetch Video Title
 
     // ✅ Extract all locations
     const locationsRaw = record.fields["Locations"] ? record.fields["Locations"].split("\n") : [];
-    
-    // ✅ Extract lat/lng from long Google Maps URLs
+
+    // ✅ Extract lat/lng and restaurant names from Google Maps URLs
     const locations = locationsRaw.map((link) => {
       const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      let name = "Unknown";
+
+      if (link.includes("/place/")) {
+        name = decodeURIComponent(link.split("/place/")[1]?.split("/@")[0] || "Unknown");
+      }
+
       return match ? {
-        name: link.split('/place/')[1]?.split('/@')[0] || "Unknown",
+        name: name.replace(/\+/g, " "),  // ✅ Converts "+" to spaces for readability
         url: link,
         coords: [parseFloat(match[2]), parseFloat(match[1])]
       } : null;
@@ -48,6 +55,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         airtableData: true,
         videoLink,
+        videoTitle,  // ✅ Sending Video Title
         locations,
         mapboxKey: MAPBOX_API_KEY
       })

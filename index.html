@@ -76,9 +76,8 @@
 
                 document.getElementById("video-link").href = data.videoLink;
 
-                // Extract video title (fallback to mapID)
-                const videoTitle = await fetchVideoTitle(data.videoLink);
-                document.getElementById("video-name").innerHTML = `<a href="${data.videoLink}" target="_blank">${videoTitle}</a>`;
+                // ✅ Use the video title from Airtable instead of fetching externally
+                document.getElementById("video-name").innerHTML = `<a href="${data.videoLink}" target="_blank">${data.videoTitle}</a>`;
 
                 mapboxgl.accessToken = data.mapboxKey;
                 const map = new mapboxgl.Map({
@@ -99,17 +98,6 @@
             } catch (error) {
                 console.error("Error fetching map data:", error);
                 document.body.innerHTML = "<h1>Failed to Load Map Data</h1>";
-            }
-        }
-
-        async function fetchVideoTitle(url) {
-            try {
-                const response = await fetch(`https://noembed.com/embed?url=${url}`);
-                const data = await response.json();
-                return data.title || "TikTok Video";
-            } catch (error) {
-                console.error("Error fetching video title:", error);
-                return "Unknown TikTok Video";
             }
         }
 
