@@ -28,7 +28,7 @@ exports.handler = async (event) => {
 
     const record = response.data.records[0];
     const videoLink = record.fields["Video Link"] || "";
-    const videoTitle = record.fields["Video Title"] || "TikTok Video";
+    const videoTitle = record.fields["Video Title"] || "TikTok Video";  // ✅ Fetch Video Title
 
     // ✅ Extract all locations
     const locationsRaw = record.fields["Locations"] ? record.fields["Locations"].split("\n") : [];
@@ -36,16 +36,16 @@ exports.handler = async (event) => {
     // ✅ Extract lat/lng and restaurant names from Google Maps URLs
     const locations = locationsRaw.map((link) => {
       const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-      let name = "Unknown";
+      let name = "Unknown Place";
 
-      if (link.includes("/place/")) {
-        name = decodeURIComponent(link.split("/place/")[1]?.split("/@")[0] || "Unknown");
-      } else if (link.includes("/search/")) {
-        name = decodeURIComponent(link.split("/search/")[1]?.split("/@")[0] || "Unknown");
+      // Extract name from URL if "/place/" exists
+      const nameMatch = link.match(/\/place\/([^/]+)/);
+      if (nameMatch) {
+        name = decodeURIComponent(nameMatch[1]).replace(/\+/g, " ");  // ✅ Convert %20 and + to spaces
       }
 
       return match ? {
-        name: name.replace(/\+/g, " "),  // ✅ Converts "+" to spaces for readability
+        name: name,
         url: link,
         coords: [parseFloat(match[2]), parseFloat(match[1])]
       } : null;
@@ -57,7 +57,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         airtableData: true,
         videoLink,
-        videoTitle,
+        videoTitle,  // ✅ Sending Video Title
         locations,
         mapboxKey: MAPBOX_API_KEY
       })
