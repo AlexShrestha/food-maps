@@ -74,10 +74,10 @@
                     return;
                 }
 
-                // ✅ Update page title with Airtable video title
-                document.getElementById("map-title").textContent = `Food Map for ${data.videoTitle}`;
-                document.getElementById("video-name").innerHTML = `<a href="${data.videoLink}" target="_blank">${data.videoTitle}</a>`;
                 document.getElementById("video-link").href = data.videoLink;
+
+                // ✅ Use the video title from Airtable instead of fetching externally
+                document.getElementById("video-name").innerHTML = `<a href="${data.videoLink}" target="_blank">${data.videoTitle}</a>`;
 
                 mapboxgl.accessToken = data.mapboxKey;
                 const map = new mapboxgl.Map({
@@ -87,7 +87,6 @@
                     zoom: 12
                 });
 
-                // ✅ Ensure place names are correctly displayed on pins
                 for (const place of data.locations) {
                     new mapboxgl.Marker()
                         .setLngLat(place.coords)
