@@ -12,107 +12,328 @@
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Discover and save food locations from your favorite TikTok videos">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <title>Food Map</title>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #ff416c;
+            --secondary-color: #ff4b2b;
+            --text-color: #ffffff;
+            --accent-color: #ffe0e6;
+            --shadow: 0 4px 15px rgba(0,0,0,0.15);
+            --border-radius: 15px;
+            --container-padding: 20px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body { 
-            font-family: Arial, sans-serif; 
+            font-family: 'Poppins', sans-serif;
             text-align: center; 
             margin: 0; 
             padding: 0; 
-            background: linear-gradient(to right, #ff416c, #ff4b2b); 
-            color: white; 
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); 
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
         }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+        
         h1 a {
-            color: white;
+            color: var(--text-color);
             text-decoration: none;
+            transition: all 0.3s ease;
         }
+        
         h1 a:hover {
             text-decoration: underline;
+            opacity: 0.9;
         }
+        
+        h3 {
+            margin: 1.5rem 0 1rem;
+            font-weight: 600;
+        }
+        
         #map { 
-            width: 90%; 
-            height: 450px; 
+            width: 100%; 
+            height: 50vh;
+            min-height: 350px; 
             margin: 20px auto; 
-            border-radius: 15px; 
-            box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+            border-radius: var(--border-radius); 
+            box-shadow: var(--shadow);
+            overflow: hidden;
         }
+        
         .container { 
-            width: 90%; 
-            max-width: 800px; 
-            margin: auto; 
-            padding: 40px; 
+            width: 92%;
+            max-width: 1000px; 
+            margin: 0 auto; 
+            padding: var(--container-padding);
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+            margin-bottom: 20px;
         }
+        
         .link { 
             display: inline-block; 
             margin: 15px 10px; 
             padding: 12px 24px; 
-            font-size: 16px; 
-            border-radius: 8px; 
+            font-size: 1rem; 
+            border-radius: 50px; 
             background: white; 
-            color: #ff4b2b; 
+            color: var(--secondary-color); 
             text-decoration: none; 
-            font-weight: bold;
-            transition: 0.3s;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
         }
+        
         .link:hover { 
-            background: #ffe0e6; 
+            background: var(--accent-color);
+            transform: translateY(-3px);
+        }
+        
+        .link:active {
+            transform: translateY(0);
+        }
+        
+        .airtable-embed {
+            border-radius: var(--border-radius) !important;
+            box-shadow: var(--shadow);
+            width: 100%;
+            height: 533px;
+            background: transparent; 
+            border: none !important;
+            margin-top: 10px;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        
+        .loading:after {
+            content: "";
+            width: 40px;
+            height: 40px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Map popup styling */
+        .mapboxgl-popup {
+            max-width: 250px;
+        }
+        
+        .mapboxgl-popup-content {
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .mapboxgl-popup-content h3 {
+            margin-top: 0;
+            color: var(--secondary-color);
+        }
+        
+        .mapboxgl-popup-content a {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        /* For very small screens */
+        @media (max-width: 400px) {
+            .container {
+                width: 95%;
+                padding: 15px 10px;
+            }
+            
+            #map {
+                height: 40vh;
+                min-height: 250px;
+            }
+            
+            .link {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+                margin: 10px 5px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 id="map-title">Food Map for <span id="video-name">...</span></h1>
+        <h1 id="map-title">Food Map for <span id="video-name"><div class="loading"></div></span></h1>
         <div id="map"></div>
         <a id="video-link" class="link" href="#" target="_blank">Watch Original TikTok Video</a>
-        <h3>Signup to add it to your map</h3>
-        <iframe class="airtable-embed" src="https://airtable.com/embed/appcRsxMxG1TVsKrz/pagYjsJcfs434HcA6/form" 
-            frameborder="0" width="100%" height="533" style="background: transparent; border: 1px solid #ccc; border-radius: 10px;"></iframe>
+        <div class="cta-section">
+            <h3>Save these locations to your personal map</h3>
+            <iframe class="airtable-embed" src="https://airtable.com/embed/appcRsxMxG1TVsKrz/pagYjsJcfs434HcA6/form" 
+                frameborder="0" width="100%" height="533"></iframe>
+        </div>
     </div>
+    <footer>
+        <p>© 2025 Food Maps | Discover food spots from your favorite videos</p>
+    </footer>
 
     <script>
         async function fetchMapData(mapID) {
             try {
+                if (!mapID) {
+                    showError("No map ID provided", "Please check the URL and try again");
+                    return;
+                }
+                
                 const response = await fetch(`/.netlify/functions/fetchAirtable?mapID=${mapID}`);
                 const data = await response.json();
 
                 if (!data.airtableData || !data.locations.length) {
-                    document.body.innerHTML = "<h1>Map Not Found</h1>";
+                    showError("Map Not Found", "The requested food map could not be found");
                     return;
                 }
 
                 document.getElementById("video-link").href = data.videoLink;
 
-                // ✅ Use the video title from Airtable instead of fetching externally
+                // Use the video title from Airtable
                 document.getElementById("video-name").innerHTML = `<a href="${data.videoLink}" target="_blank">${data.videoTitle}</a>`;
+                document.title = `Food Map: ${data.videoTitle}`; // Update page title with video title
 
+                // Initialize map with custom options
                 mapboxgl.accessToken = data.mapboxKey;
                 const map = new mapboxgl.Map({
                     container: 'map',
                     style: 'mapbox://styles/mapbox/streets-v12',
                     center: data.locations[0]?.coords || [-74.0060, 40.7128], // Default to NYC
-                    zoom: 12
+                    zoom: 12,
+                    attributionControl: false
                 });
+                
+                // Add navigation controls
+                map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+                map.addControl(new mapboxgl.GeolocateControl({
+                    positionOptions: { enableHighAccuracy: true },
+                    trackUserLocation: true
+                }), 'top-right');
+                
+                // Add attribution in a more subtle way
+                map.addControl(new mapboxgl.AttributionControl({
+                    compact: true
+                }));
 
+                // Add markers for each location
+                const bounds = new mapboxgl.LngLatBounds();
+                
                 for (const place of data.locations) {
-                    new mapboxgl.Marker()
-                        .setLngLat(place.coords)
-                        .setPopup(new mapboxgl.Popup().setHTML(
-                            `<h3>${place.name}</h3><p><a href="${place.url}" target="_blank">View on Google Maps</a></p>`
-                        ))
-                        .addTo(map);
+                    // Create custom marker element
+                    const marker = new mapboxgl.Marker({
+                        color: '#ff416c',
+                        scale: 0.9
+                    })
+                    .setLngLat(place.coords)
+                    .setPopup(new mapboxgl.Popup({
+                        closeButton: false,
+                        maxWidth: '300px'
+                    }).setHTML(
+                        `<h3>${place.name}</h3>
+                        <p><a href="${place.url}" target="_blank">View on Google Maps</a></p>`
+                    ))
+                    .addTo(map);
+                    
+                    // Extend bounds to include this location
+                    bounds.extend(place.coords);
                 }
+                
+                // Fit map to show all markers with padding
+                if (data.locations.length > 1) {
+                    map.fitBounds(bounds, {
+                        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+                        maxZoom: 15
+                    });
+                }
+                
+                // Add responsive behavior
+                window.addEventListener('resize', () => {
+                    map.resize();
+                });
+                
             } catch (error) {
                 console.error("Error fetching map data:", error);
-                document.body.innerHTML = "<h1>Failed to Load Map Data</h1>";
+                showError("Failed to Load Map Data", "Please try again later");
             }
+        }
+        
+        // Helper function to show error messages
+        function showError(title, message) {
+            const container = document.querySelector('.container');
+            container.innerHTML = `
+                <div class="error-container">
+                    <h1>${title}</h1>
+                    <p>${message}</p>
+                    <a href="/" class="link">Go to Homepage</a>
+                </div>
+            `;
         }
 
         // Get map ID from URL and fetch data
-        const urlParams = new URLSearchParams(window.location.search);
-        fetchMapData(urlParams.get("mapID"));
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            fetchMapData(urlParams.get("mapID"));
+        });
     </script>
+    
+    <style>
+        footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 20px;
+        }
+        
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh;
+            padding: 20px;
+        }
+        
+        .cta-section {
+            margin-top: 30px;
+        }
+    </style>
 </body>
 </html>
